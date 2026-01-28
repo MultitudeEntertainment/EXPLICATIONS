@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Catastrophe de Tchernobyl – Simulation interactive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg: #020617;
+            --bg-card: #020617;
+            --border: #1f2937;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #fbbf24;
+            --accent-strong: #f97316;
+            --danger: #ef4444;
+            --ok: #22c55e;
+            --core-cold: #0ea5e9;
+            --core-hot: #f97316;
+            --core-critical: #ef4444;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        h1, h2, h3, h4 {
+            color: var(--accent);
+            margin-top: 0;
+        }
+        p {
+            margin-top: 0;
+        }
+        a {
+            color: #38bdf8;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: #111827;
+            color: var(--muted);
+            margin-right: 6px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .highlight {
+            color: var(--accent-strong);
+            font-weight: 600;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+            gap: 18px;
+        }
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: rgba(2, 6, 23, 0.9);
+            border-radius: 12px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 0 1px #020617, 0 18px 40px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+        }
+        .card + .card {
+            margin-top: 14px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        code {
+            background: #111827;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        details {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .note {
+            font-size: 13px;
+            color: var(--muted);
+        }
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .timeline-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #111827;
+            background: #020617;
+            cursor: pointer;
+            transition: background .2s, border-color .2s, transform .1s;
+        }
+        .timeline-step:hover {
+            background: #030712;
+            transform: translateY(-1px);
+        }
+        .timeline-step.active {
+            border-color: var(--accent);
+            background: #111827;
+        }
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: var(--accent);
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .timeline-title {
+            font-weight: 600;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            border-radius: 999px;
+            border: 1px solid #1f2937;
+            background: #020617;
+            color: var(--text);
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background .15s, border-color .15s, transform .1s;
+        }
+        .btn:hover {
+            background: #111827;
+            border-color: #374151;
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            border-color: var(--accent);
+            background: #111827;
+        }
+        .btn-primary:hover {
+            background: #1f2937;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .status-pill {
+            padding: 2px 10px;
+            border-radius: 999px;
+            border: 1px solid #1f2937;
+            font-size: 11px;
+        }
+        .status-pill.ok {
+            border-color: var(--ok);
+            color: var(--ok);
+        }
+        .status-pill.warn {
+            border-color: var(--accent-strong);
+            color: var(--accent-strong);
+        }
+        .status-pill.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .diagram-wrapper {
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 12px;
+        }
+        .diagram-core {
+            position: relative;
+            background: radial-gradient(circle at center, #020617 0, #020617 40%, #000 100%);
+            border-radius: 14px;
+            border: 1px solid #111827;
+            padding: 14px;
+            overflow: hidden;
+            min-height: 260px;
+        }
+        .diagram-title {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .core-grid {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 3px;
+        }
+        .core-cell {
+            border-radius: 4px;
+            background: #020617;
+            border: 1px solid #111827;
+            position: relative;
+            overflow: hidden;
+        }
+        .core-cell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, var(--core-cold) 0, transparent 60%);
+            opacity: .2;
+            transition: opacity .3s, background .3s;
+        }
+        body[data-state="stable"] .core-cell::before {
+            opacity: .25;
+            background: radial-gradient(circle at center, var(--core-cold) 0, transparent 60%);
+        }
+        body[data-state="unstable"] .core-cell::before {
+            opacity: .4;
+            background: radial-gradient(circle at center, var(--core-hot) 0, transparent 60%);
+        }
+        body[data-state="az5"] .core-cell::before {
+            opacity: .5;
+            background: radial-gradient(circle at center, var(--core-hot) 0, transparent 60%);
+        }
+        body[data-state="deformation"] .core-cell::before,
+        body[data-state="explosion"] .core-cell::before {
+            opacity: .7;
+            background: radial-gradient(circle at center, var(--core-critical) 0, transparent 60%);
+        }
+        .rod {
+            position: absolute;
+            width: 10%;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            height: 130%;
+            background: linear-gradient(to bottom, #4b5563 0, #111827 40%, #020617 100%);
+            border-radius: 999px;
+            box-shadow: 0 0 10px rgba(15,23,42,0.8);
+            transform: translateY(-110%);
+            transition: transform .6s cubic-bezier(.22,.61,.36,1), background .3s, box-shadow .3s;
+        }
+        .rod-tip {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            width: 100%;
+            height: 18%;
+            border-radius: 999px;
+            background: linear-gradient(to bottom, #f97316, #fbbf24);
+            box-shadow: 0 0 8px rgba(248,181,0,0.9);
+        }
+        .rod-label {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            font-size: 10px;
+            color: var(--muted);
+            background: rgba(15,23,42,0.8);
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid #1f2937;
+        }
+        .rod-container {
+            position: absolute;
+            inset: 8% 10% 8% 10%;
+        }
+        .rod-slot {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 10%;
+        }
+        .rod-slot:nth-child(1) { left: 10%; }
+        .rod-slot:nth-child(2) { left: 30%; }
+        .rod-slot:nth-child(3) { left: 50%; }
+        .rod-slot:nth-child(4) { left: 70%; }
+        .rod-slot:nth-child(5) { left: 90%; transform: translateX(-100%); }
+        body[data-state="stable"] .rod {
+            transform: translateY(-40%);
+        }
+        body[data-state="unstable"] .rod {
+            transform: translateY(-80%);
+        }
+        body[data-state="az5"] .rod {
+            transform: translateY(-10%);
+        }
+        body[data-state="deformation"] .rod {
+            transform: translateY(-35%);
+        }
+        body[data-state="deformation"] .rod::after {
+            content: "";
+            position: absolute;
+            bottom: 25%;
+            left: -10%;
+            right: -10%;
+            height: 12%;
+            border-radius: 999px;
+            background: rgba(239,68,68,0.4);
+            box-shadow: 0 0 10px rgba(239,68,68,0.8);
+        }
+        body[data-state="explosion"] .rod {
+            transform: translateY(-200%) rotate(8deg);
+            box-shadow: 0 0 25px rgba(239,68,68,1);
+            background: linear-gradient(to bottom, #ef4444, #7f1d1d);
+        }
+        body[data-state="explosion"] .core-grid {
+            animation: shake .4s ease-in-out infinite;
+        }
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-2px, 1px); }
+            50% { transform: translate(2px, -1px); }
+            75% { transform: translate(-1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        .void-panel {
+            background: #020617;
+            border-radius: 12px;
+            border: 1px solid #111827;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        .void-bar {
+            position: relative;
+            height: 12px;
+            border-radius: 999px;
+            background: #020617;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .void-fill {
+            position: absolute;
+            inset: 0;
+            width: 20%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #0ea5e9, #22c55e);
+            transition: width .5s ease, background .5s ease;
+        }
+        .void-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        body[data-state="stable"] .void-fill {
+            width: 25%;
+            background: linear-gradient(90deg, #0ea5e9, #22c55e);
+        }
+        body[data-state="unstable"] .void-fill {
+            width: 55%;
+            background: linear-gradient(90deg, #22c55e, #f97316);
+        }
+        body[data-state="az5"] .void-fill {
+            width: 65%;
+            background: linear-gradient(90deg, #22c55e, #f97316);
+        }
+        body[data-state="deformation"] .void-fill {
+            width: 80%;
+            background: linear-gradient(90deg, #f97316, #ef4444);
+        }
+        body[data-state="explosion"] .void-fill {
+            width: 100%;
+            background: linear-gradient(90deg, #f97316, #ef4444);
+        }
+        .void-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        footer {
+            margin-top: 26px;
+            font-size: 12px;
+            color: var(--muted);
+            border-top: 1px solid #111827;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body data-state="stable">
+<div class="page">
+    <header>
+        <h1>Catastrophe de Tchernobyl – Simulation interactive du réacteur RBMK‑1000</h1>
+        <p>
+            Explore la nuit du <span class="highlight">26 avril 1986</span> : fonctionnement du RBMK, coefficient de vide positif,
+            descente des barres de contrôle, <strong>déformation et blocage partiel</strong>, puis explosion de vapeur.
+        </p>
+        <span class="tag">RBMK‑1000</span>
+        <span class="tag">Coefficient de vide positif</span>
+        <span class="tag">Barres de contrôle déformées</span>
+        <span class="tag">HTML + CSS + JavaScript</span>
+    </header>
+
+    <div class="layout">
+        <main>
+            <div class="card">
+                <h2>1. Comprendre le réacteur RBMK‑1000</h2>
+                <p>
+                    Le RBMK‑1000 est un réacteur <strong>modéré au graphite</strong> et <strong>refroidi à l’eau légère</strong>.
+                    Le combustible est placé dans des <strong>canaux de pression</strong> traversant un énorme bloc de graphite.
+                    L’eau y circule, bout, et la vapeur entraîne les turbines.
+                </p>
+                <details>
+                    <summary>1.1 Canaux de combustible et rôle du graphite</summary>
+                    <p>
+                        Chaque canal contient des pastilles d’oxyde d’uranium (<code>UO₂</code>) faiblement enrichi, dans des gaines
+                        en alliage de zirconium. Le graphite ralentit les neutrons pour entretenir la réaction en chaîne.
+                        L’eau refroidit le combustible et absorbe une partie des neutrons.
+                    </p>
+                </details>
+                <details>
+                    <summary>1.2 Coefficient de vide positif</summary>
+                    <p>
+                        Quand l’eau bout, elle se transforme en vapeur : il y a moins d’eau liquide dans les canaux, on parle de
+                        <strong>vide</strong>. Dans un RBMK :
+                    </p>
+                    <ul>
+                        <li>Moins d’eau = moins d’absorption de neutrons.</li>
+                        <li>Le graphite continue de modérer efficacement.</li>
+                        <li>Résultat : la <strong>réactivité augmente</strong> quand il y a plus de vapeur.</li>
+                    </ul>
+                    <p>
+                        C’est le fameux <strong>coefficient de vide positif</strong> : plus de vapeur → plus de puissance → encore plus de vapeur,
+                        ce qui peut conduire à une <strong>instabilité</strong>, surtout à faible puissance.
+                    </p>
+                </details>
+                <details>
+                    <summary>1.3 Barres de contrôle et défaut de conception</summary>
+                    <p>
+                        Les barres de contrôle absorbent les neutrons pour réduire la puissance. Dans le RBMK de Tchernobyl :
+                    </p>
+                    <ul>
+                        <li>La partie inférieure des barres est en <strong>graphite</strong>, surmontée d’une partie absorbante.</li>
+                        <li>Au début de l’insertion, la pointe en graphite <strong>remplace l’eau</strong> dans le bas du cœur.</li>
+                        <li>Le graphite modère mieux que l’eau → <strong>augmentation locale de la réactivité</strong> au moment le plus critique.</li>
+                    </ul>
+                    <p>
+                        Lors de l’accident, la situation est aggravée par un autre phénomène : la <strong>déformation des canaux
+                        de combustible</strong> sous l’effet de la montée de puissance.
+                    </p>
+                    <p class="note">
+                        Quand les canaux se déforment, certaines barres de contrôle ne peuvent plus <strong>s’enfoncer complètement</strong> :
+                        elles restent <strong>bloquées partiellement</strong>, ce qui empêche l’arrêt total du réacteur.
+                    </p>
+                </details>
+            </div>
+
+            <div class="card">
+                <h2>2. Timeline interactive de la nuit du 26 avril 1986</h2>
+                <p>
+                    Clique sur chaque étape pour voir l’état du cœur, la position des barres de contrôle et l’évolution du
+                    coefficient de vide.
+                </p>
+
+                <div class="controls">
+                    <button class="btn btn-primary" id="play-sequence">
+                        ▶ Rejouer la séquence complète
+                    </button>
+                    <button class="btn" id="reset-sequence">
+                        ⏹ Remettre à l’état stable
+                    </button>
+                </div>
+
+                <div class="timeline" id="timeline">
+                    <div class="timeline-step" data-state="stable" data-index="0">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="timeline-title">Avant 1 h 00 – Réacteur à faible puissance</div>
+                            <div class="timeline-time">Puissance ~200 MW<sub>th</sub>, beaucoup de barres retirées</div>
+                            <p class="note">
+                                Le réacteur est dans une zone instable, avec un coefficient de vide positif dangereux.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-state="unstable" data-index="1">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="timeline-title">1 h 23 – Début du test</div>
+                            <div class="timeline-time">Réduction du débit de vapeur vers les turbines</div>
+                            <p class="note">
+                                Moins d’eau circule, plus de vapeur se forme dans le cœur → la réactivité augmente.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-state="az5" data-index="2">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="timeline-title">1 h 23 min 40 s – Appui sur AZ‑5</div>
+                            <div class="timeline-time">Ordre d’arrêt d’urgence (SCRAM)</div>
+                            <p class="note">
+                                Toutes les barres de contrôle commencent à descendre, mais la pointe en graphite augmente
+                                d’abord la réactivité dans le bas du cœur.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-state="deformation" data-index="3">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="timeline-title">1 h 23 min 41–43 s – Déformation et blocage des barres</div>
+                            <div class="timeline-time">Montée de puissance extrême</div>
+                            <p class="note">
+                                Les canaux de combustible se déforment, certaines barres de contrôle <strong>se coincent</strong> et
+                                ne s’enfoncent pas complètement : l’arrêt complet devient impossible.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-step" data-state="explosion" data-index="4">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="timeline-title">1 h 23 min 44 s – Explosion de vapeur et destruction du cœur</div>
+                            <div class="timeline-time">Deux explosions, incendie du graphite</div>
+                            <p class="note">
+                                La puissance atteint plusieurs dizaines de fois la puissance nominale, les canaux éclatent,
+                                le bâtiment du réacteur est détruit, le graphite s’enflamme.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>3. Conséquences et enseignements</h2>
+                <details open>
+                    <summary>3.1 Rejets radioactifs et santé</summary>
+                    <ul>
+                        <li><strong>Iode‑131 :</strong> période ~8 jours, se fixe sur la thyroïde, responsable de nombreux cancers
+                            de la thyroïde chez les enfants exposés.</li>
+                        <li><strong>Césium‑137 :</strong> période ~30 ans, contamine durablement les sols et la chaîne alimentaire.</li>
+                        <li><strong>Travailleurs et pompiers :</strong> doses très élevées, syndromes d’irradiation aiguë, décès
+                            dans les semaines suivant l’accident.</li>
+                    </ul>
+                </details>
+                <details>
+                    <summary>3.2 Sarcophage et Nouveau Confinement Sûr</summary>
+                    <p>
+                        Un premier sarcophage en béton et acier est construit en 1986 dans l’urgence. Il se dégrade avec le temps.
+                        Un <strong>Nouveau Confinement Sûr</strong>, une arche métallique géante, est ensuite construit et glissé
+                        au‑dessus pour limiter les rejets et permettre le démantèlement futur.
+                    </p>
+                </details>
+                <details>
+                    <summary>3.3 Ce que Tchernobyl a appris au monde</summary>
+                    <ul>
+                        <li><strong>Culture de sûreté :</strong> la sécurité doit toujours passer avant la production.</li>
+                        <li><strong>Transparence :</strong> cacher un accident aggrave ses conséquences pour les populations.</li>
+                        <li><strong>Conception des réacteurs :</strong> éviter les configurations avec coefficient de vide positif
+                            et défauts de barres de contrôle.</li>
+                    </ul>
+                </details>
+            </div>
+        </main>
+
+        <aside>
+            <div class="card diagram-wrapper">
+                <div>
+                    <div class="status-bar">
+                        <span class="diagram-title">Schéma simplifié du cœur du RBMK‑1000</span>
+                        <span id="status-pill" class="status-pill ok">État : stable</span>
+                    </div>
+                    <div class="diagram-core">
+                        <div class="core-grid">
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                            <div class="core-cell"></div>
+                        </div>
+
+                        <div class="rod-container">
+                            <div class="rod-slot">
+                                <div class="rod">
+                                    <div class="rod-tip"></div>
+                                </div>
+                            </div>
+                            <div class="rod-slot">
+                                <div class="rod">
+                                    <div class="rod-tip"></div>
+                                </div>
+                            </div>
+                            <div class="rod-slot">
+                                <div class="rod">
+                                    <div class="rod-tip"></div>
+                                </div>
+                            </div>
+                            <div class="rod-slot">
+                                <div class="rod">
+                                    <div class="rod-tip"></div>
+                                </div>
+                            </div>
+                            <div class="rod-slot">
+                                <div class="rod">
+                                    <div class="rod-tip"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rod-label">Barres de contrôle (pointe en graphite)</div>
+                    </div>
+                </div>
+
+                <div class="void-panel">
+                    <div class="diagram-title">Coefficient de vide positif – eau → vapeur → réactivité</div>
+                    <div class="void-bar">
+                        <div class="void-fill" id="void-fill"></div>
+                    </div>
+                    <div class="void-labels">
+                        <span>Peu de vapeur (eau liquide)</span>
+                        <span>Beaucoup de vapeur (vide élevé)</span>
+                    </div>
+                    <div class="void-note" id="void-note">
+                        État stable : le vide est modéré, la puissance est contrôlée.
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        Fichier autonome pour GitHub Pages : enregistre ce code dans <code>index.html</code> dans un dépôt public,
+        active GitHub Pages, et ouvre l’URL générée. Tu peux ensuite modifier les textes, les couleurs ou ajouter
+        d’autres schémas (par exemple une coupe latérale du RBMK).
+    </footer>
+</div>
+
+<script>
+(function () {
+    const body = document.body;
+    const steps = Array.from(document.querySelectorAll(".timeline-step"));
+    const statusPill = document.getElementById("status-pill");
+    const voidNote = document.getElementById("void-note");
+    const playBtn = document.getElementById("play-sequence");
+    const resetBtn = document.getElementById("reset-sequence");
+
+    const states = [
+        {
+            key: "stable",
+            label: "État : stable",
+            pillClass: "ok",
+            note: "État stable : le vide est modéré, la puissance est contrôlée."
+        },
+        {
+            key: "unstable",
+            label: "État : instable (montée de vide)",
+            pillClass: "warn",
+            note: "Le vide augmente : plus de vapeur, plus de réactivité, le cœur devient instable."
+        },
+        {
+            key: "az5",
+            label: "État : AZ‑5 enclenché",
+            pillClass: "warn",
+            note: "Les barres descendent, mais la pointe en graphite augmente d’abord la réactivité dans le bas du cœur."
+        },
+        {
+            key: "deformation",
+            label: "État : barres déformées / bloquées",
+            pillClass: "danger",
+            note: "Les canaux se déforment, certaines barres se coincent : l’arrêt complet est impossible, la puissance explose."
+        },
+        {
+            key: "explosion",
+            label: "État : explosion de vapeur",
+            pillClass: "danger",
+            note: "Explosion de vapeur, destruction du cœur, incendie du graphite et rejets massifs de radioactivité."
+        }
+    ];
+
+    function setState(index) {
+        const state = states[index];
+        if (!state) return;
+        body.setAttribute("data-state", state.key);
+
+        steps.forEach((step, i) => {
+            step.classList.toggle("active", i === index);
+        });
+
+        statusPill.textContent = state.label;
+        statusPill.classList.remove("ok", "warn", "danger");
+        statusPill.classList.add(state.pillClass);
+
+        voidNote.textContent = state.note;
+    }
+
+    steps.forEach(step => {
+        step.addEventListener("click", () => {
+            const index = parseInt(step.getAttribute("data-index"), 10);
+            setState(index);
+        });
+    });
+
+    let playing = false;
+    let playTimeout = null;
+
+    function playSequence() {
+        if (playing) return;
+        playing = true;
+        let i = 0;
+        function next() {
+            setState(i);
+            i++;
+            if (i < states.length) {
+                playTimeout = setTimeout(next, 1600);
+            } else {
+                playing = false;
+            }
+        }
+        next();
+    }
+
+    function resetSequence() {
+        playing = false;
+        if (playTimeout) {
+            clearTimeout(playTimeout);
+            playTimeout = null;
+        }
+        setState(0);
+    }
+
+    playBtn.addEventListener("click", playSequence);
+    resetBtn.addEventListener("click", resetSequence);
+
+    setState(0);
+})();
+</script>
+</body>
+</html>
