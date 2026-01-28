@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Catastrophe de Tchernobyl – Simulation interactive</title>
+    <title>Tchernobyl & Réacteur nucléaire – Histoire, technique, schémas animés</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root {
             --bg: #020617;
-            --bg-card: #020617;
+            --bg-card: rgba(15,23,42,0.95);
             --border: #1f2937;
             --text: #e5e7eb;
             --muted: #9ca3af;
@@ -15,13 +15,11 @@
             --accent-strong: #f97316;
             --danger: #ef4444;
             --ok: #22c55e;
-            --core-cold: #0ea5e9;
-            --core-hot: #f97316;
-            --core-critical: #ef4444;
+            --blue: #0ea5e9;
+            --blue-dark: #1d4ed8;
+            --red: #ef4444;
         }
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -29,8 +27,9 @@
             color: var(--text);
             line-height: 1.6;
         }
+        a { color: #38bdf8; }
         .page {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             padding: 20px 16px 40px;
         }
@@ -41,12 +40,7 @@
             color: var(--accent);
             margin-top: 0;
         }
-        p {
-            margin-top: 0;
-        }
-        a {
-            color: #38bdf8;
-        }
+        p { margin-top: 0; }
         .tag {
             display: inline-block;
             padding: 2px 10px;
@@ -62,49 +56,37 @@
             color: var(--accent-strong);
             font-weight: 600;
         }
-        .layout {
+        .grid-main {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
             gap: 18px;
         }
-        @media (max-width: 900px) {
-            .layout {
-                grid-template-columns: 1fr;
-            }
+        @media (max-width: 1000px) {
+            .grid-main { grid-template-columns: 1fr; }
         }
         .card {
-            background: rgba(2, 6, 23, 0.9);
+            background: var(--bg-card);
             border-radius: 12px;
             padding: 18px 20px;
             border: 1px solid var(--border);
             box-shadow: 0 0 0 1px #020617, 0 18px 40px rgba(0,0,0,0.6);
             backdrop-filter: blur(10px);
         }
-        .card + .card {
-            margin-top: 14px;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        code {
-            background: #111827;
-            padding: 2px 4px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        details {
-            margin-top: 8px;
-            margin-bottom: 8px;
-        }
+        .card + .card { margin-top: 14px; }
+        ul { padding-left: 20px; }
+        details { margin: 6px 0 8px; }
         summary {
             cursor: pointer;
             font-weight: 600;
-            color: var(--text);
         }
         .note {
             font-size: 13px;
             color: var(--muted);
         }
+        .toc ul { margin: 0; }
+        .toc li { margin-bottom: 4px; }
+
+        /* Timeline Tchernobyl */
         .timeline {
             display: flex;
             flex-direction: column;
@@ -172,40 +154,19 @@
             border-color: var(--accent);
             background: #111827;
         }
-        .btn-primary:hover {
-            background: #1f2937;
-        }
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            color: var(--muted);
-            margin-bottom: 8px;
-        }
+        .btn-primary:hover { background: #1f2937; }
+
         .status-pill {
             padding: 2px 10px;
             border-radius: 999px;
             border: 1px solid #1f2937;
             font-size: 11px;
         }
-        .status-pill.ok {
-            border-color: var(--ok);
-            color: var(--ok);
-        }
-        .status-pill.warn {
-            border-color: var(--accent-strong);
-            color: var(--accent-strong);
-        }
-        .status-pill.danger {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-        .diagram-wrapper {
-            display: grid;
-            grid-template-rows: auto auto;
-            gap: 12px;
-        }
+        .status-pill.ok { border-color: var(--ok); color: var(--ok); }
+        .status-pill.warn { border-color: var(--accent-strong); color: var(--accent-strong); }
+        .status-pill.danger { border-color: var(--danger); color: var(--danger); }
+
+        /* Schéma RBMK simplifié (barres de contrôle) */
         .diagram-core {
             position: relative;
             background: radial-gradient(circle at center, #020617 0, #020617 40%, #000 100%);
@@ -214,6 +175,7 @@
             padding: 14px;
             overflow: hidden;
             min-height: 260px;
+            margin-bottom: 12px;
         }
         .diagram-title {
             font-size: 13px;
@@ -242,27 +204,42 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, var(--core-cold) 0, transparent 60%);
-            opacity: .2;
+            background: radial-gradient(circle at center, #0ea5e9 0, transparent 60%);
+            opacity: .25;
             transition: opacity .3s, background .3s;
         }
-        body[data-state="stable"] .core-cell::before {
+        body[data-rbmk="stable"] .core-cell::before {
             opacity: .25;
-            background: radial-gradient(circle at center, var(--core-cold) 0, transparent 60%);
+            background: radial-gradient(circle at center, #0ea5e9 0, transparent 60%);
         }
-        body[data-state="unstable"] .core-cell::before {
+        body[data-rbmk="unstable"] .core-cell::before {
             opacity: .4;
-            background: radial-gradient(circle at center, var(--core-hot) 0, transparent 60%);
+            background: radial-gradient(circle at center, #f97316 0, transparent 60%);
         }
-        body[data-state="az5"] .core-cell::before {
+        body[data-rbmk="az5"] .core-cell::before {
             opacity: .5;
-            background: radial-gradient(circle at center, var(--core-hot) 0, transparent 60%);
+            background: radial-gradient(circle at center, #f97316 0, transparent 60%);
         }
-        body[data-state="deformation"] .core-cell::before,
-        body[data-state="explosion"] .core-cell::before {
+        body[data-rbmk="deformation"] .core-cell::before,
+        body[data-rbmk="explosion"] .core-cell::before {
             opacity: .7;
-            background: radial-gradient(circle at center, var(--core-critical) 0, transparent 60%);
+            background: radial-gradient(circle at center, #ef4444 0, transparent 60%);
         }
+        .rod-container {
+            position: absolute;
+            inset: 8% 10% 8% 10%;
+        }
+        .rod-slot {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 10%;
+        }
+        .rod-slot:nth-child(1) { left: 10%; }
+        .rod-slot:nth-child(2) { left: 30%; }
+        .rod-slot:nth-child(3) { left: 50%; }
+        .rod-slot:nth-child(4) { left: 70%; }
+        .rod-slot:nth-child(5) { left: 90%; transform: translateX(-100%); }
         .rod {
             position: absolute;
             width: 10%;
@@ -299,34 +276,11 @@
             border-radius: 999px;
             border: 1px solid #1f2937;
         }
-        .rod-container {
-            position: absolute;
-            inset: 8% 10% 8% 10%;
-        }
-        .rod-slot {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 10%;
-        }
-        .rod-slot:nth-child(1) { left: 10%; }
-        .rod-slot:nth-child(2) { left: 30%; }
-        .rod-slot:nth-child(3) { left: 50%; }
-        .rod-slot:nth-child(4) { left: 70%; }
-        .rod-slot:nth-child(5) { left: 90%; transform: translateX(-100%); }
-        body[data-state="stable"] .rod {
-            transform: translateY(-40%);
-        }
-        body[data-state="unstable"] .rod {
-            transform: translateY(-80%);
-        }
-        body[data-state="az5"] .rod {
-            transform: translateY(-10%);
-        }
-        body[data-state="deformation"] .rod {
-            transform: translateY(-35%);
-        }
-        body[data-state="deformation"] .rod::after {
+        body[data-rbmk="stable"] .rod { transform: translateY(-40%); }
+        body[data-rbmk="unstable"] .rod { transform: translateY(-80%); }
+        body[data-rbmk="az5"] .rod { transform: translateY(-10%); }
+        body[data-rbmk="deformation"] .rod { transform: translateY(-35%); }
+        body[data-rbmk="deformation"] .rod::after {
             content: "";
             position: absolute;
             bottom: 25%;
@@ -337,12 +291,12 @@
             background: rgba(239,68,68,0.4);
             box-shadow: 0 0 10px rgba(239,68,68,0.8);
         }
-        body[data-state="explosion"] .rod {
+        body[data-rbmk="explosion"] .rod {
             transform: translateY(-200%) rotate(8deg);
             box-shadow: 0 0 25px rgba(239,68,68,1);
             background: linear-gradient(to bottom, #ef4444, #7f1d1d);
         }
-        body[data-state="explosion"] .core-grid {
+        body[data-rbmk="explosion"] .core-grid {
             animation: shake .4s ease-in-out infinite;
         }
         @keyframes shake {
@@ -352,6 +306,7 @@
             75% { transform: translate(-1px, -2px); }
             100% { transform: translate(0, 0); }
         }
+
         .void-panel {
             background: #020617;
             border-radius: 12px;
@@ -382,31 +337,85 @@
             font-size: 11px;
             color: var(--muted);
         }
-        body[data-state="stable"] .void-fill {
-            width: 25%;
-            background: linear-gradient(90deg, #0ea5e9, #22c55e);
-        }
-        body[data-state="unstable"] .void-fill {
-            width: 55%;
-            background: linear-gradient(90deg, #22c55e, #f97316);
-        }
-        body[data-state="az5"] .void-fill {
-            width: 65%;
-            background: linear-gradient(90deg, #22c55e, #f97316);
-        }
-        body[data-state="deformation"] .void-fill {
-            width: 80%;
-            background: linear-gradient(90deg, #f97316, #ef4444);
-        }
-        body[data-state="explosion"] .void-fill {
-            width: 100%;
-            background: linear-gradient(90deg, #f97316, #ef4444);
-        }
         .void-note {
             font-size: 11px;
             color: var(--muted);
             margin-top: 4px;
         }
+        body[data-rbmk="stable"] .void-fill {
+            width: 25%;
+            background: linear-gradient(90deg, #0ea5e9, #22c55e);
+        }
+        body[data-rbmk="unstable"] .void-fill {
+            width: 55%;
+            background: linear-gradient(90deg, #22c55e, #f97316);
+        }
+        body[data-rbmk="az5"] .void-fill {
+            width: 65%;
+            background: linear-gradient(90deg, #22c55e, #f97316);
+        }
+        body[data-rbmk="deformation"] .void-fill {
+            width: 80%;
+            background: linear-gradient(90deg, #f97316, #ef4444);
+        }
+        body[data-rbmk="explosion"] .void-fill {
+            width: 100%;
+            background: linear-gradient(90deg, #f97316, #ef4444);
+        }
+
+        /* Schéma PWR type “vrai réacteur” */
+        .pwr-card-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .pwr-diagram-wrapper {
+            margin-top: 8px;
+            background: #020617;
+            border-radius: 12px;
+            border: 1px solid #111827;
+            padding: 10px;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .pwr-label {
+            font-size: 11px;
+            fill: var(--text);
+        }
+        .flow-hot {
+            stroke: var(--red);
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+            stroke-dasharray: 8 8;
+            animation: flowHot 1.4s linear infinite;
+        }
+        .flow-cold {
+            stroke: var(--blue);
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+            stroke-dasharray: 8 8;
+            animation: flowCold 1.4s linear infinite;
+        }
+        @keyframes flowHot {
+            to { stroke-dashoffset: -16; }
+        }
+        @keyframes flowCold {
+            to { stroke-dashoffset: 16; }
+        }
+        .core-gradient-hot {
+            animation: coreHeat 3s ease-in-out infinite alternate;
+        }
+        @keyframes coreHeat {
+            0% { stop-color: #f97316; }
+            100% { stop-color: #ef4444; }
+        }
+
         footer {
             margin-top: 26px;
             font-size: 12px;
@@ -416,91 +425,111 @@
         }
     </style>
 </head>
-<body data-state="stable">
+<body data-rbmk="stable">
 <div class="page">
     <header>
-        <h1>Catastrophe de Tchernobyl – Simulation interactive du réacteur RBMK‑1000</h1>
+        <h1>Tchernobyl & réacteur nucléaire – Histoire, technique, schémas animés</h1>
         <p>
-            Explore la nuit du <span class="highlight">26 avril 1986</span> : fonctionnement du RBMK, coefficient de vide positif,
-            descente des barres de contrôle, <strong>déformation et blocage partiel</strong>, puis explosion de vapeur.
+            Une page complète pour comprendre la catastrophe de <span class="highlight">Tchernobyl (26 avril 1986)</span>,
+            le fonctionnement d’un réacteur nucléaire (type <strong>PWR</strong> comme sur ton schéma) et les
+            particularités du réacteur <strong>RBMK‑1000</strong> qui ont conduit à l’accident.
         </p>
+        <span class="tag">Tchernobyl</span>
         <span class="tag">RBMK‑1000</span>
-        <span class="tag">Coefficient de vide positif</span>
-        <span class="tag">Barres de contrôle déformées</span>
-        <span class="tag">HTML + CSS + JavaScript</span>
+        <span class="tag">Réacteur à eau pressurisée (PWR)</span>
+        <span class="tag">Schémas animés</span>
+        <span class="tag">HTML + CSS + JS</span>
     </header>
 
-    <div class="layout">
+    <div class="card toc">
+        <h2>Plan de la page</h2>
+        <ul>
+            <li><a href="#histoire">1. Histoire et contexte de Tchernobyl</a></li>
+            <li><a href="#rbmk">2. Le réacteur RBMK‑1000 et les causes techniques</a></li>
+            <li><a href="#timeline">3. Timeline interactive de la nuit du 26 avril 1986</a></li>
+            <li><a href="#pwr">4. Schéma animé d’un réacteur à eau pressurisée (PWR)</a></li>
+            <li><a href="#consequences">5. Conséquences et enseignements</a></li>
+        </ul>
+    </div>
+
+    <div class="grid-main">
         <main>
-            <div class="card">
-                <h2>1. Comprendre le réacteur RBMK‑1000</h2>
+            <!-- 1. HISTOIRE -->
+            <section id="histoire" class="card">
+                <h2>1. Histoire et contexte de la catastrophe de Tchernobyl</h2>
                 <p>
-                    Le RBMK‑1000 est un réacteur <strong>modéré au graphite</strong> et <strong>refroidi à l’eau légère</strong>.
-                    Le combustible est placé dans des <strong>canaux de pression</strong> traversant un énorme bloc de graphite.
-                    L’eau y circule, bout, et la vapeur entraîne les turbines.
+                    Dans la nuit du <span class="highlight">26 avril 1986</span>, le réacteur n°4 de la centrale de Tchernobyl,
+                    en Ukraine (alors URSS), explose lors d’un essai de sûreté mal préparé. L’accident est classé
+                    <strong>niveau 7</strong> (maximum) sur l’échelle INES.
                 </p>
-                <details>
-                    <summary>1.1 Canaux de combustible et rôle du graphite</summary>
-                    <p>
-                        Chaque canal contient des pastilles d’oxyde d’uranium (<code>UO₂</code>) faiblement enrichi, dans des gaines
-                        en alliage de zirconium. Le graphite ralentit les neutrons pour entretenir la réaction en chaîne.
-                        L’eau refroidit le combustible et absorbe une partie des neutrons.
-                    </p>
+                <details open>
+                    <summary>1.1 Contexte politique et industriel</summary>
+                    <ul>
+                        <li><strong>URSS années 1980 :</strong> forte pression pour produire de l’électricité, culture de secret.</li>
+                        <li><strong>Réacteurs RBMK :</strong> conçus pour être puissants, modulables, mais avec des défauts de sûreté.</li>
+                        <li><strong>Culture de sûreté faible :</strong> procédures parfois ignorées, hiérarchie très présente.</li>
+                    </ul>
                 </details>
                 <details>
-                    <summary>1.2 Coefficient de vide positif</summary>
+                    <summary>1.2 L’essai de sûreté prévu</summary>
                     <p>
-                        Quand l’eau bout, elle se transforme en vapeur : il y a moins d’eau liquide dans les canaux, on parle de
-                        <strong>vide</strong>. Dans un RBMK :
+                        L’objectif : vérifier si, en cas de <strong>perte totale d’alimentation électrique</strong>, l’inertie des turbines
+                        suffit à alimenter les pompes de refroidissement pendant quelques dizaines de secondes, le temps que les
+                        générateurs diesel démarrent.
                     </p>
+                    <p>
+                        Le test est repoussé, réalisé à un moment défavorable, avec un réacteur à <strong>faible puissance instable</strong>
+                        et plusieurs systèmes de sûreté désactivés.
+                    </p>
+                </details>
+            </section>
+
+            <!-- 2. RBMK -->
+            <section id="rbmk" class="card">
+                <h2>2. Le réacteur RBMK‑1000 et les causes techniques</h2>
+                <p>
+                    Le RBMK‑1000 est un réacteur <strong>modéré au graphite</strong> et <strong>refroidi à l’eau légère</strong>, avec des
+                    <strong>canaux de pression</strong> traversant un énorme bloc de graphite. Il présente deux défauts majeurs :
+                    <strong>coefficient de vide positif</strong> et <strong>conception des barres de contrôle</strong>.
+                </p>
+                <details open>
+                    <summary>2.1 Coefficient de vide positif</summary>
                     <ul>
-                        <li>Moins d’eau = moins d’absorption de neutrons.</li>
+                        <li>Quand l’eau bout → plus de vapeur → moins d’absorption de neutrons.</li>
                         <li>Le graphite continue de modérer efficacement.</li>
-                        <li>Résultat : la <strong>réactivité augmente</strong> quand il y a plus de vapeur.</li>
+                        <li>Résultat : plus de vapeur = <strong>plus de réactivité</strong> = montée de puissance.</li>
                     </ul>
-                    <p>
-                        C’est le fameux <strong>coefficient de vide positif</strong> : plus de vapeur → plus de puissance → encore plus de vapeur,
-                        ce qui peut conduire à une <strong>instabilité</strong>, surtout à faible puissance.
-                    </p>
-                </details>
-                <details>
-                    <summary>1.3 Barres de contrôle et défaut de conception</summary>
-                    <p>
-                        Les barres de contrôle absorbent les neutrons pour réduire la puissance. Dans le RBMK de Tchernobyl :
-                    </p>
-                    <ul>
-                        <li>La partie inférieure des barres est en <strong>graphite</strong>, surmontée d’une partie absorbante.</li>
-                        <li>Au début de l’insertion, la pointe en graphite <strong>remplace l’eau</strong> dans le bas du cœur.</li>
-                        <li>Le graphite modère mieux que l’eau → <strong>augmentation locale de la réactivité</strong> au moment le plus critique.</li>
-                    </ul>
-                    <p>
-                        Lors de l’accident, la situation est aggravée par un autre phénomène : la <strong>déformation des canaux
-                        de combustible</strong> sous l’effet de la montée de puissance.
-                    </p>
                     <p class="note">
-                        Quand les canaux se déforment, certaines barres de contrôle ne peuvent plus <strong>s’enfoncer complètement</strong> :
-                        elles restent <strong>bloquées partiellement</strong>, ce qui empêche l’arrêt total du réacteur.
+                        À faible puissance, ce comportement rend le réacteur <strong>très instable</strong>.
                     </p>
                 </details>
-            </div>
+                <details open>
+                    <summary>2.2 Barres de contrôle : pointe en graphite et blocage</summary>
+                    <ul>
+                        <li>La partie basse des barres est en <strong>graphite</strong>, au‑dessus la partie absorbante.</li>
+                        <li>Au début de l’insertion, la pointe en graphite <strong>remplace l’eau</strong> dans le bas du cœur.</li>
+                        <li>Le graphite modère mieux que l’eau → <strong>augmentation locale de la réactivité</strong> au moment critique.</li>
+                    </ul>
+                    <p>
+                        Lors de l’accident, la montée de puissance déforme les <strong>canaux de combustible</strong>. Résultat :
+                        certaines barres de contrôle <strong>ne peuvent pas s’enfoncer complètement</strong>, elles restent
+                        <strong>bloquées partiellement</strong>. L’arrêt complet du réacteur devient impossible.
+                    </p>
+                </details>
+            </section>
 
-            <div class="card">
-                <h2>2. Timeline interactive de la nuit du 26 avril 1986</h2>
+            <!-- 3. TIMELINE -->
+            <section id="timeline" class="card">
+                <h2>3. Timeline interactive de la nuit du 26 avril 1986</h2>
                 <p>
-                    Clique sur chaque étape pour voir l’état du cœur, la position des barres de contrôle et l’évolution du
-                    coefficient de vide.
+                    Clique sur chaque étape pour voir l’état du cœur RBMK (schéma à droite) : position des barres de contrôle,
+                    coefficient de vide, déformation et explosion.
                 </p>
-
                 <div class="controls">
-                    <button class="btn btn-primary" id="play-sequence">
-                        ▶ Rejouer la séquence complète
-                    </button>
-                    <button class="btn" id="reset-sequence">
-                        ⏹ Remettre à l’état stable
-                    </button>
+                    <button class="btn btn-primary" id="play-sequence">▶ Rejouer la séquence complète</button>
+                    <button class="btn" id="reset-sequence">⏹ Remettre à l’état stable</button>
                 </div>
-
-                <div class="timeline" id="timeline">
+                <div class="timeline" id="timeline-steps">
                     <div class="timeline-step" data-state="stable" data-index="0">
                         <div class="timeline-dot"></div>
                         <div>
@@ -515,9 +544,9 @@
                         <div class="timeline-dot"></div>
                         <div>
                             <div class="timeline-title">1 h 23 – Début du test</div>
-                            <div class="timeline-time">Réduction du débit de vapeur vers les turbines</div>
+                            <div class="timeline-time">Modification du débit d’eau et de vapeur</div>
                             <p class="note">
-                                Moins d’eau circule, plus de vapeur se forme dans le cœur → la réactivité augmente.
+                                Moins d’eau circule, plus de vapeur se forme → la réactivité augmente, le cœur devient instable.
                             </p>
                         </div>
                     </div>
@@ -527,8 +556,7 @@
                             <div class="timeline-title">1 h 23 min 40 s – Appui sur AZ‑5</div>
                             <div class="timeline-time">Ordre d’arrêt d’urgence (SCRAM)</div>
                             <p class="note">
-                                Toutes les barres de contrôle commencent à descendre, mais la pointe en graphite augmente
-                                d’abord la réactivité dans le bas du cœur.
+                                Les barres descendent, mais la pointe en graphite augmente d’abord la réactivité dans le bas du cœur.
                             </p>
                         </div>
                     </div>
@@ -538,141 +566,79 @@
                             <div class="timeline-title">1 h 23 min 41–43 s – Déformation et blocage des barres</div>
                             <div class="timeline-time">Montée de puissance extrême</div>
                             <p class="note">
-                                Les canaux de combustible se déforment, certaines barres de contrôle <strong>se coincent</strong> et
-                                ne s’enfoncent pas complètement : l’arrêt complet devient impossible.
+                                Les canaux se déforment, certaines barres se coincent et ne s’enfoncent pas complètement :
+                                l’arrêt complet est impossible.
                             </p>
                         </div>
                     </div>
                     <div class="timeline-step" data-state="explosion" data-index="4">
                         <div class="timeline-dot"></div>
                         <div>
-                            <div class="timeline-title">1 h 23 min 44 s – Explosion de vapeur et destruction du cœur</div>
-                            <div class="timeline-time">Deux explosions, incendie du graphite</div>
+                            <div class="timeline-title">1 h 23 min 44 s – Explosion de vapeur</div>
+                            <div class="timeline-time">Destruction du cœur et du bâtiment</div>
                             <p class="note">
-                                La puissance atteint plusieurs dizaines de fois la puissance nominale, les canaux éclatent,
-                                le bâtiment du réacteur est détruit, le graphite s’enflamme.
+                                Explosion de vapeur, destruction du cœur, incendie du graphite, rejets massifs de radioactivité.
                             </p>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="card">
-                <h2>3. Conséquences et enseignements</h2>
+            <!-- 5. CONSEQUENCES -->
+            <section id="consequences" class="card">
+                <h2>5. Conséquences et enseignements</h2>
                 <details open>
-                    <summary>3.1 Rejets radioactifs et santé</summary>
+                    <summary>5.1 Rejets radioactifs et santé</summary>
                     <ul>
-                        <li><strong>Iode‑131 :</strong> période ~8 jours, se fixe sur la thyroïde, responsable de nombreux cancers
-                            de la thyroïde chez les enfants exposés.</li>
-                        <li><strong>Césium‑137 :</strong> période ~30 ans, contamine durablement les sols et la chaîne alimentaire.</li>
-                        <li><strong>Travailleurs et pompiers :</strong> doses très élevées, syndromes d’irradiation aiguë, décès
-                            dans les semaines suivant l’accident.</li>
+                        <li><strong>Iode‑131 :</strong> cancers de la thyroïde chez les enfants exposés.</li>
+                        <li><strong>Césium‑137 :</strong> contamination durable des sols et de la chaîne alimentaire.</li>
+                        <li><strong>Travailleurs et pompiers :</strong> doses très élevées, syndromes d’irradiation aiguë, décès précoces.</li>
                     </ul>
                 </details>
                 <details>
-                    <summary>3.2 Sarcophage et Nouveau Confinement Sûr</summary>
+                    <summary>5.2 Sarcophage, Nouveau Confinement Sûr et zone d’exclusion</summary>
                     <p>
-                        Un premier sarcophage en béton et acier est construit en 1986 dans l’urgence. Il se dégrade avec le temps.
-                        Un <strong>Nouveau Confinement Sûr</strong>, une arche métallique géante, est ensuite construit et glissé
-                        au‑dessus pour limiter les rejets et permettre le démantèlement futur.
+                        Un premier sarcophage est construit en 1986 dans l’urgence. Plus tard, une arche métallique
+                        (Nouveau Confinement Sûr) est coulissée au‑dessus pour limiter les rejets et permettre le
+                        démantèlement futur. Une zone d’exclusion d’environ 30 km reste très peu habitée.
                     </p>
                 </details>
                 <details>
-                    <summary>3.3 Ce que Tchernobyl a appris au monde</summary>
+                    <summary>5.3 Leçons pour le nucléaire civil</summary>
                     <ul>
-                        <li><strong>Culture de sûreté :</strong> la sécurité doit toujours passer avant la production.</li>
-                        <li><strong>Transparence :</strong> cacher un accident aggrave ses conséquences pour les populations.</li>
-                        <li><strong>Conception des réacteurs :</strong> éviter les configurations avec coefficient de vide positif
-                            et défauts de barres de contrôle.</li>
+                        <li><strong>Culture de sûreté :</strong> la sécurité doit passer avant la production.</li>
+                        <li><strong>Conception :</strong> éviter les réacteurs avec coefficient de vide positif et défauts de barres.</li>
+                        <li><strong>Transparence :</strong> communiquer rapidement en cas d’accident pour protéger les populations.</li>
                     </ul>
                 </details>
-            </div>
+            </section>
         </main>
 
         <aside>
-            <div class="card diagram-wrapper">
-                <div>
-                    <div class="status-bar">
-                        <span class="diagram-title">Schéma simplifié du cœur du RBMK‑1000</span>
-                        <span id="status-pill" class="status-pill ok">État : stable</span>
-                    </div>
-                    <div class="diagram-core">
-                        <div class="core-grid">
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                            <div class="core-cell"></div>
-                        </div>
-
-                        <div class="rod-container">
-                            <div class="rod-slot">
-                                <div class="rod">
-                                    <div class="rod-tip"></div>
-                                </div>
-                            </div>
-                            <div class="rod-slot">
-                                <div class="rod">
-                                    <div class="rod-tip"></div>
-                                </div>
-                            </div>
-                            <div class="rod-slot">
-                                <div class="rod">
-                                    <div class="rod-tip"></div>
-                                </div>
-                            </div>
-                            <div class="rod-slot">
-                                <div class="rod">
-                                    <div class="rod-tip"></div>
-                                </div>
-                            </div>
-                            <div class="rod-slot">
-                                <div class="rod">
-                                    <div class="rod-tip"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="rod-label">Barres de contrôle (pointe en graphite)</div>
-                    </div>
+            <!-- Schéma RBMK -->
+            <div class="card">
+                <div class="diagram-title">
+                    Schéma simplifié du cœur RBMK‑1000 (barres de contrôle)
                 </div>
-
+                <div class="diagram-core">
+                    <div class="core-grid">
+                        <!-- 6x6 cells -->
+                        <div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div>
+                        <div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div>
+                        <div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div>
+                        <div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div>
+                        <div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div>
+                        <div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div><div class="core-cell"></div>
+                    </div>
+                    <div class="rod-container">
+                        <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
+                        <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
+                        <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
+                        <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
+                        <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
+                    </div>
+                    <div class="rod-label">Barres de contrôle (pointe en graphite)</div>
+                </div>
                 <div class="void-panel">
                     <div class="diagram-title">Coefficient de vide positif – eau → vapeur → réactivité</div>
                     <div class="void-bar">
@@ -686,14 +652,93 @@
                         État stable : le vide est modéré, la puissance est contrôlée.
                     </div>
                 </div>
+                <div style="margin-top:8px;font-size:12px;color:var(--muted);">
+                    Le schéma montre la descente des barres, la pointe en graphite, puis le blocage partiel
+                    lorsque les canaux se déforment.
+                </div>
+            </div>
+
+            <!-- Schéma PWR -->
+            <div id="pwr" class="card" style="margin-top:14px;">
+                <div class="pwr-card-title">
+                    <h3 style="margin:0;">4. Réacteur à eau pressurisée (PWR)</h3>
+                    <span class="status-pill ok">Schéma animé</span>
+                </div>
+                <p class="note">
+                    Exemple de réacteur nucléaire moderne : cœur dans une cuve sous pression, circuit primaire fermé,
+                    générateur de vapeur, pompe primaire.
+                </p>
+                <div class="pwr-diagram-wrapper">
+                    <svg viewBox="0 0 600 360">
+                        <defs>
+                            <linearGradient id="coreHot" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#f97316" class="core-gradient-hot"/>
+                                <stop offset="100%" stop-color="#b91c1c"/>
+                            </linearGradient>
+                            <linearGradient id="coreCold" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#0ea5e9"/>
+                                <stop offset="100%" stop-color="#1d4ed8"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Fond -->
+                        <rect x="0" y="0" width="600" height="360" fill="#020617" rx="16"/>
+
+                        <!-- Cuve du réacteur -->
+                        <rect x="80" y="60" width="120" height="220" rx="40" ry="40" fill="#111827" stroke="#4b5563" stroke-width="3"/>
+                        <!-- Cœur chaud -->
+                        <rect x="105" y="110" width="70" height="140" rx="20" ry="20" fill="url(#coreHot)" stroke="#fecaca" stroke-width="2"/>
+
+                        <!-- Légende cœur -->
+                        <text x="140" y="50" text-anchor="middle" class="pwr-label">1. Cœur du réacteur</text>
+
+                        <!-- Plénum inférieur -->
+                        <rect x="95" y="230" width="90" height="30" rx="10" ry="10" fill="#0f172a" stroke="#1f2937" stroke-width="2"/>
+                        <text x="140" y="280" text-anchor="middle" class="pwr-label">2. Plénum inférieur</text>
+
+                        <!-- Générateur de vapeur -->
+                        <rect x="360" y="60" width="120" height="220" rx="20" ry="20" fill="#111827" stroke="#4b5563" stroke-width="3"/>
+                        <rect x="380" y="90" width="80" height="80" rx="10" ry="10" fill="#0f172a" stroke="#1f2937" stroke-width="2"/>
+                        <rect x="380" y="190" width="80" height="60" rx="10" ry="10" fill="#0f172a" stroke="#1f2937" stroke-width="2"/>
+                        <text x="420" y="50" text-anchor="middle" class="pwr-label">4. Générateur de vapeur</text>
+
+                        <!-- Pompe primaire -->
+                        <circle cx="260" cy="260" r="26" fill="#0f172a" stroke="#1f2937" stroke-width="3"/>
+                        <path d="M250 250 L270 270 M270 250 L250 270" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                        <text x="260" y="305" text-anchor="middle" class="pwr-label">3. Pompe primaire</text>
+
+                        <!-- Sortie chaude du cœur vers générateur -->
+                        <path class="flow-hot" d="M200 120 C 260 120 260 120 320 120 L 360 120"/>
+                        <!-- Retour froid du générateur vers pompe puis plénum -->
+                        <path class="flow-cold" d="M360 220 L 320 220 C 280 220 260 230 260 240 C 260 250 250 260 240 260 L 200 260 L 140 260"/>
+
+                        <!-- Flèche interne cœur (montée) -->
+                        <path class="flow-hot" d="M140 240 L140 130"/>
+
+                        <!-- Sortie vapeur (schéma secondaire simplifié) -->
+                        <path class="flow-hot" d="M420 90 L420 40 L520 40"/>
+                        <text x="520" y="30" text-anchor="middle" class="pwr-label">Sortie vapeur</text>
+
+                        <!-- Entrée eau d’alimentation -->
+                        <path class="flow-cold" d="M520 80 L420 80"/>
+                        <text x="520" y="95" text-anchor="middle" class="pwr-label">Eau d’alimentation</text>
+
+                        <!-- Légende sortie primaire -->
+                        <text x="280" y="110" text-anchor="middle" class="pwr-label">5. Sortie primaire chaude</text>
+                    </svg>
+                </div>
+                <p class="note" style="margin-top:6px;">
+                    Ce schéma montre un <strong>réacteur à eau pressurisée (PWR)</strong> : le cœur chauffe l’eau du circuit primaire,
+                    qui reste liquide sous haute pression. La chaleur est transférée au générateur de vapeur, qui produit la vapeur
+                    envoyée vers la turbine.
+                </p>
             </div>
         </aside>
     </div>
 
     <footer>
-        Fichier autonome pour GitHub Pages : enregistre ce code dans <code>index.html</code> dans un dépôt public,
-        active GitHub Pages, et ouvre l’URL générée. Tu peux ensuite modifier les textes, les couleurs ou ajouter
-        d’autres schémas (par exemple une coupe latérale du RBMK).
+        Pour GitHub Pages : crée un dépôt, ajoute ce fichier comme <code>index.html</code>, active GitHub Pages, et ouvre l’URL.
+        Tu peux ensuite affiner les couleurs, les textes ou ajouter d’autres vues (coupe verticale, salle des machines, etc.).
     </footer>
 </div>
 
@@ -701,7 +746,6 @@
 (function () {
     const body = document.body;
     const steps = Array.from(document.querySelectorAll(".timeline-step"));
-    const statusPill = document.getElementById("status-pill");
     const voidNote = document.getElementById("void-note");
     const playBtn = document.getElementById("play-sequence");
     const resetBtn = document.getElementById("reset-sequence");
@@ -709,32 +753,22 @@
     const states = [
         {
             key: "stable",
-            label: "État : stable",
-            pillClass: "ok",
             note: "État stable : le vide est modéré, la puissance est contrôlée."
         },
         {
             key: "unstable",
-            label: "État : instable (montée de vide)",
-            pillClass: "warn",
             note: "Le vide augmente : plus de vapeur, plus de réactivité, le cœur devient instable."
         },
         {
             key: "az5",
-            label: "État : AZ‑5 enclenché",
-            pillClass: "warn",
             note: "Les barres descendent, mais la pointe en graphite augmente d’abord la réactivité dans le bas du cœur."
         },
         {
             key: "deformation",
-            label: "État : barres déformées / bloquées",
-            pillClass: "danger",
             note: "Les canaux se déforment, certaines barres se coincent : l’arrêt complet est impossible, la puissance explose."
         },
         {
             key: "explosion",
-            label: "État : explosion de vapeur",
-            pillClass: "danger",
             note: "Explosion de vapeur, destruction du cœur, incendie du graphite et rejets massifs de radioactivité."
         }
     ];
@@ -742,16 +776,10 @@
     function setState(index) {
         const state = states[index];
         if (!state) return;
-        body.setAttribute("data-state", state.key);
-
+        body.setAttribute("data-rbmk", state.key);
         steps.forEach((step, i) => {
             step.classList.toggle("active", i === index);
         });
-
-        statusPill.textContent = state.label;
-        statusPill.classList.remove("ok", "warn", "danger");
-        statusPill.classList.add(state.pillClass);
-
         voidNote.textContent = state.note;
     }
 
