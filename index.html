@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Tchernobyl – Physique, réacteurs, film en stickmen</title>
+    <title>Tchernobyl – Histoire, physique, schémas interactifs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root {
@@ -18,7 +18,7 @@
             --blue: #0ea5e9;
             --blue-dark: #1d4ed8;
             --red: #ef4444;
-            --green: #22c55e;
+            --tooltip-bg: #020617;
         }
         * { box-sizing: border-box; }
         body {
@@ -57,7 +57,7 @@
         }
         .grid-main {
             display: grid;
-            grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
+            grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr);
             gap: 18px;
         }
         @media (max-width: 1000px) {
@@ -85,46 +85,6 @@
         .toc ul { margin: 0; }
         .toc li { margin-bottom: 4px; }
 
-        /* Timeline Tchernobyl */
-        .timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .timeline-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid #111827;
-            background: #020617;
-            cursor: pointer;
-            transition: background .2s, border-color .2s, transform .1s;
-        }
-        .timeline-step:hover {
-            background: #030712;
-            transform: translateY(-1px);
-        }
-        .timeline-step.active {
-            border-color: var(--accent);
-            background: #111827;
-        }
-        .timeline-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 999px;
-            background: var(--accent);
-            margin-top: 4px;
-            flex-shrink: 0;
-        }
-        .timeline-time {
-            font-size: 12px;
-            color: var(--muted);
-        }
-        .timeline-title {
-            font-weight: 600;
-        }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -154,6 +114,57 @@
             background: #111827;
         }
         .btn-primary:hover { background: #1f2937; }
+
+        /* Tooltip system */
+        .info-dot {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            background: #111827;
+            border: 1px solid #4b5563;
+            color: var(--accent);
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 4px;
+            position: relative;
+        }
+        .info-dot:hover {
+            background: #020617;
+            border-color: var(--accent);
+        }
+        .tooltip {
+            position: absolute;
+            z-index: 20;
+            min-width: 180px;
+            max-width: 260px;
+            background: var(--tooltip-bg);
+            border-radius: 10px;
+            border: 1px solid #374151;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: var(--text);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+            transform: translate(-50%, -110%);
+        }
+        .tooltip-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        .tooltip-arrow {
+            position: absolute;
+            left: 50%;
+            bottom: -6px;
+            width: 10px;
+            height: 10px;
+            background: var(--tooltip-bg);
+            border-left: 1px solid #374151;
+            border-bottom: 1px solid #374151;
+            transform: translateX(-50%) rotate(45deg);
+        }
 
         /* RBMK core + void */
         .diagram-core {
@@ -405,7 +416,48 @@
             100% { stop-color: #ef4444; }
         }
 
-        /* Carte Europe + nuage */
+        /* Timeline */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .timeline-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #111827;
+            background: #020617;
+            cursor: pointer;
+            transition: background .2s, border-color .2s, transform .1s;
+        }
+        .timeline-step:hover {
+            background: #030712;
+            transform: translateY(-1px);
+        }
+        .timeline-step.active {
+            border-color: var(--accent);
+            background: #111827;
+        }
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: var(--accent);
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .timeline-title {
+            font-weight: 600;
+        }
+
+        /* Europe map + cloud day-by-day */
         .map-card {
             margin-top: 14px;
         }
@@ -418,165 +470,34 @@
             position: relative;
             overflow: hidden;
         }
-        .cloud {
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .day-label {
+            font-size: 13px;
+            color: var(--accent);
+        }
+        .cloud-layer {
             position: absolute;
-            width: 120px;
-            height: 60px;
+            inset: 0;
+            pointer-events: none;
+        }
+        .cloud-shape {
+            position: absolute;
+            border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, rgba(248,250,252,0.9), transparent 60%),
                         radial-gradient(circle at 70% 40%, rgba(248,250,252,0.8), transparent 60%),
                         radial-gradient(circle at 50% 70%, rgba(248,250,252,0.7), transparent 60%);
-            border-radius: 50%;
-            opacity: 0.8;
             filter: blur(1px);
-            left: -140px;
-            top: 80px;
-            animation: cloudMove 18s linear infinite;
+            opacity: 0;
+            transition: opacity .5s ease, transform 1.2s ease;
         }
-        @keyframes cloudMove {
-            0% { transform: translateX(0); opacity: 0.9; }
-            40% { opacity: 0.9; }
-            80% { opacity: 0.7; }
-            100% { transform: translateX(700px); opacity: 0; }
-        }
-
-        /* Film stickmen */
-        #film {
-            margin-top: 24px;
-        }
-        .film-stage {
-            margin-top: 10px;
-            background: #020617;
-            border-radius: 12px;
-            border: 1px solid #111827;
-            padding: 14px;
-            position: relative;
-            overflow: hidden;
-            min-height: 220px;
-        }
-        .film-track {
-            position: relative;
-            width: 100%;
-            height: 180px;
-        }
-        .stick {
-            position: absolute;
-            width: 40px;
-            height: 100px;
-            transform-origin: center bottom;
-        }
-        .stick-head {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid #e5e7eb;
-            margin: 0 auto;
-            position: relative;
-        }
-        .stick-body {
-            width: 2px;
-            height: 40px;
-            background: #e5e7eb;
-            margin: 0 auto;
-        }
-        .stick-arm {
-            width: 26px;
-            height: 2px;
-            background: #e5e7eb;
-            margin: 0 auto;
-            transform-origin: center;
-        }
-        .stick-leg {
-            width: 2px;
-            height: 26px;
-            background: #e5e7eb;
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform-origin: top;
-        }
-        .stick-leg.left { transform: translateX(-4px) rotate(10deg); }
-        .stick-leg.right { transform: translateX(2px) rotate(-10deg); }
-
-        .face-neutral::before,
-        .face-neutral::after,
-        .face-sad::before,
-        .face-sad::after,
-        .face-worried::before,
-        .face-worried::after,
-        .face-determined::before,
-        .face-determined::after {
-            content: "";
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            top: 8px;
-        }
-        .face-neutral::before,
-        .face-sad::before,
-        .face-worried::before,
-        .face-determined::before { left: 6px; }
-        .face-neutral::after,
-        .face-sad::after,
-        .face-worried::after,
-        .face-determined::after { right: 6px; }
-
-        .mouth {
-            position: absolute;
-            left: 6px;
-            right: 6px;
-            bottom: 5px;
-            height: 6px;
-            border-radius: 999px;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        .mouth-sad { border-top: 2px solid #e5e7eb; border-bottom: none; bottom: 3px; }
-        .mouth-worried { border-bottom: 2px solid #e5e7eb; transform: scaleX(0.7); }
-        .mouth-determined { border-bottom: 2px solid #e5e7eb; transform: rotate(-5deg); }
-
-        .bubble {
-            position: absolute;
-            max-width: 180px;
-            background: #111827;
-            border-radius: 10px;
-            border: 1px solid #374151;
-            padding: 6px 8px;
-            font-size: 11px;
-            color: var(--text);
-        }
-        .bubble::after {
-            content: "";
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #111827;
-            border-left: 1px solid #374151;
-            border-bottom: 1px solid #374151;
-            transform: rotate(45deg);
-        }
-        .bubble-top::after {
-            bottom: -5px;
-            left: 12px;
-        }
-        .bubble-bottom::after {
-            top: -5px;
-            left: 12px;
-            transform: rotate(225deg);
-        }
-
-        .film-caption {
-            margin-top: 6px;
-            font-size: 13px;
-            color: var(--muted);
-            min-height: 32px;
-        }
-
-        .film-btn-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-            flex-wrap: wrap;
+        .cloud-visible {
+            opacity: 0.85;
         }
 
         footer {
@@ -591,28 +512,30 @@
 <body data-rbmk="stable">
 <div class="page">
     <header>
-        <h1>Tchernobyl – Physique, réacteurs, schémas & film en stickmen</h1>
+        <h1>Tchernobyl – Histoire, physique, schémas interactifs & carte de l’Europe</h1>
         <p>
-            Une page complète pour comprendre la catastrophe de <span class="highlight">Tchernobyl (26 avril 1986)</span>,
-            la physique derrière le <strong>coefficient de vide positif</strong>, la différence avec un réacteur
-            à eau pressurisée (PWR), et revivre l’histoire sous forme de <strong>film de bonshommes bâtons</strong>.
+            Une page pour comprendre en profondeur la catastrophe de <span class="highlight">Tchernobyl (26 avril 1986)</span> :
+            contexte historique, déroulé heure par heure, <strong>physique du RBMK</strong>, comparaison avec un
+            <strong>réacteur à eau pressurisée (PWR)</strong>, et un <strong>nuage radioactif animé jour par jour</strong>
+            au‑dessus de l’Europe, avec des <strong>“?” explicatifs</strong> sur chaque notion technique.
         </p>
         <span class="tag">Tchernobyl</span>
         <span class="tag">RBMK‑1000</span>
         <span class="tag">PWR</span>
-        <span class="tag">Physique détaillée</span>
-        <span class="tag">Stickmen</span>
+        <span class="tag">Physique</span>
+        <span class="tag">Carte animée</span>
+        <span class="tag">Pédagogique</span>
     </header>
 
     <div class="card toc">
         <h2>Plan</h2>
         <ul>
-            <li><a href="#histoire">1. Histoire et contexte</a></li>
-            <li><a href="#physique">2. Physique du RBMK et “pourquoi” des phénomènes</a></li>
+            <li><a href="#histoire">1. Histoire et contexte (détaillé)</a></li>
+            <li><a href="#physique">2. Physique du RBMK – explications des notions techniques</a></li>
             <li><a href="#timeline">3. Timeline interactive de la nuit du 26 avril</a></li>
             <li><a href="#pwr">4. Schéma animé d’un réacteur à eau pressurisée (PWR)</a></li>
-            <li><a href="#nuage">5. Nuage radioactif au‑dessus de l’Europe</a></li>
-            <li><a href="#film">6. Film récapitulatif avec stickmen</a></li>
+            <li><a href="#nuage">5. Nuage radioactif sur l’Europe – animation jour par jour</a></li>
+            <li><a href="#consequences">6. Conséquences et enseignements</a></li>
         </ul>
     </div>
 
@@ -620,30 +543,47 @@
         <main>
             <!-- 1. HISTOIRE -->
             <section id="histoire" class="card">
-                <h2>1. Histoire et contexte de Tchernobyl</h2>
-                <p>
-                    Dans la nuit du <span class="highlight">26 avril 1986</span>, le réacteur n°4 de la centrale de Tchernobyl,
-                    en Ukraine (alors URSS), explose lors d’un essai de sûreté mal préparé. L’accident est classé
-                    <strong>niveau 7</strong> (maximum) sur l’échelle INES.
-                </p>
+                <h2>1. Histoire et contexte – avant, pendant, après</h2>
                 <details open>
-                    <summary>1.1 Contexte politique et industriel</summary>
+                    <summary>1.1 Avant l’accident : pourquoi Tchernobyl existe</summary>
+                    <p>
+                        Dans les années 1970–1980, l’URSS construit de grandes centrales nucléaires pour alimenter
+                        l’industrie et les villes. Le site de Tchernobyl, en Ukraine, accueille plusieurs réacteurs
+                        de type <strong>RBMK‑1000</strong>
+                        <span class="info-dot" data-tooltip="rbmk">?</span>.
+                    </p>
                     <ul>
-                        <li><strong>URSS années 1980 :</strong> forte pression pour produire de l’électricité, culture du secret.</li>
-                        <li><strong>Réacteurs RBMK :</strong> puissants, modulables, mais avec des défauts de sûreté.</li>
-                        <li><strong>Culture de sûreté faible :</strong> procédures parfois ignorées, hiérarchie très présente.</li>
+                        <li><strong>Pression politique :</strong> produire beaucoup, éviter les coupures, montrer la puissance technologique.</li>
+                        <li><strong>Culture du secret :</strong> les problèmes techniques sont peu partagés, la communication externe est limitée.</li>
+                        <li><strong>Formation :</strong> les opérateurs sont compétents, mais pas toujours informés des défauts de conception du réacteur.</li>
                     </ul>
                 </details>
-                <details>
-                    <summary>1.2 L’essai de sûreté prévu</summary>
+
+                <details open>
+                    <summary>1.2 Le test de sûreté : idée logique, exécution catastrophique</summary>
                     <p>
-                        Objectif : vérifier si, en cas de <strong>perte totale d’alimentation électrique</strong>, l’inertie des turbines
-                        suffit à alimenter les pompes de refroidissement pendant quelques dizaines de secondes, le temps que les
-                        générateurs diesel démarrent.
+                        L’idée du test : vérifier si, en cas de <strong>perte totale d’alimentation électrique</strong>,
+                        l’inertie des turbines suffit à alimenter les pompes de refroidissement pendant quelques dizaines de secondes,
+                        le temps que les générateurs diesel démarrent.
+                    </p>
+                    <ul>
+                        <li><strong>Test déjà tenté :</strong> un essai précédent n’avait pas été concluant.</li>
+                        <li><strong>Test repoussé :</strong> la demande du réseau électrique retarde l’essai, le réacteur reste longtemps à puissance intermédiaire.</li>
+                        <li><strong>Moment défavorable :</strong> le test est finalement réalisé de nuit, avec une équipe fatiguée et un réacteur dans une zone instable.</li>
+                    </ul>
+                </details>
+
+                <details>
+                    <summary>1.3 La nuit du 25 au 26 avril 1986</summary>
+                    <p>
+                        Le réacteur est descendu à une puissance très basse, puis remonté de façon non idéale. Beaucoup de
+                        <strong>barres de contrôle</strong>
+                        <span class="info-dot" data-tooltip="barres">?</span>
+                        sont retirées pour maintenir la puissance, ce qui rend le cœur très sensible aux variations de vapeur.
                     </p>
                     <p>
-                        Le test est repoussé, réalisé à un moment défavorable, avec un réacteur à <strong>faible puissance instable</strong>
-                        et plusieurs systèmes de sûreté désactivés.
+                        Plusieurs systèmes de sûreté sont désactivés ou contournés pour permettre le test. La situation est
+                        déjà dangereuse avant même de commencer la séquence finale.
                     </p>
                 </details>
             </section>
@@ -652,20 +592,28 @@
             <section id="physique" class="card">
                 <h2>2. Physique du RBMK – “Pourquoi” les phénomènes</h2>
                 <p>
-                    Le RBMK‑1000 est un réacteur <strong>modéré au graphite</strong> et <strong>refroidi à l’eau légère</strong>, avec des
-                    <strong>canaux de pression</strong> traversant un énorme bloc de graphite. Deux points clés :
-                    <strong>coefficient de vide positif</strong> et <strong>barres de contrôle mal conçues</strong>.
+                    Le RBMK‑1000 est un réacteur <strong>modéré au graphite</strong>
+                    <span class="info-dot" data-tooltip="graphite">?</span>
+                    et <strong>refroidi à l’eau légère</strong>
+                    <span class="info-dot" data-tooltip="eau">?</span>, avec des
+                    <strong>canaux de pression</strong>
+                    <span class="info-dot" data-tooltip="canaux">?</span>.
+                    Deux points clés : <strong>coefficient de vide positif</strong>
+                    <span class="info-dot" data-tooltip="vide">?</span> et
+                    <strong>barres de contrôle mal conçues</strong>
+                    <span class="info-dot" data-tooltip="barres-graphite">?</span>.
                 </p>
 
                 <details open>
                     <summary>2.1 Quand l’eau bout → plus de vapeur → moins d’absorption de neutrons : pourquoi ?</summary>
                     <p>
-                        Dans le cœur, les neutrons se déplacent et peuvent :
+                        Dans le cœur, les neutrons peuvent :
                     </p>
                     <ul>
                         <li>être <strong>ralentis</strong> (modérés) par le graphite,</li>
                         <li>être <strong>absorbés</strong> par l’eau, le combustible ou les barres de contrôle,</li>
-                        <li>provoquer une <strong>fission</strong> dans l’uranium‑235.</li>
+                        <li>provoquer une <strong>fission</strong>
+                            <span class="info-dot" data-tooltip="fission">?</span> dans l’uranium‑235.</li>
                     </ul>
                     <p><strong>Densité :</strong> l’eau liquide est dense, la vapeur beaucoup moins.</p>
                     <ul>
@@ -675,8 +623,8 @@
                     </ul>
                     <p>
                         Donc, quand l’eau bout et se transforme en vapeur, la densité de matière absorbante diminue :
-                        <strong>les neutrons sont moins freinés/absorbés par l’eau</strong>. Le graphite, lui, reste là, solide,
-                        et continue de modérer très bien les neutrons.
+                        <strong>les neutrons sont moins absorbés par l’eau</strong>. Le graphite, lui, reste solide et continue
+                        de modérer très bien les neutrons.
                     </p>
                     <p class="note">
                         Résultat : plus de vapeur = moins d’absorption par l’eau, mais toujours autant de modération par le graphite
@@ -686,13 +634,19 @@
 
                 <details open>
                     <summary>2.2 Coefficient de vide positif : boucle de rétroaction</summary>
+                    <p>
+                        Le <strong>coefficient de vide</strong>
+                        <span class="info-dot" data-tooltip="vide">?</span>
+                        décrit comment la réactivité change quand il y a plus de vapeur (donc plus de “vide”) dans le cœur.
+                    </p>
                     <ul>
                         <li>La puissance augmente → l’eau chauffe → elle bout davantage → plus de vapeur.</li>
                         <li>Plus de vapeur → moins d’absorption → plus de neutrons efficaces → la puissance augmente encore.</li>
                     </ul>
                     <p>
-                        C’est une <strong>boucle de rétroaction positive</strong>. Dans un réacteur bien conçu, on cherche au contraire
-                        un <strong>coefficient de vide négatif</strong> : plus de vapeur → moins de réactivité → la puissance se calme.
+                        C’est une <strong>boucle de rétroaction positive</strong> : une petite augmentation de puissance peut
+                        s’auto‑amplifier. Dans un réacteur moderne bien conçu (PWR, par exemple), on cherche au contraire un
+                        <strong>coefficient de vide négatif</strong> : plus de vapeur → moins de réactivité → la puissance se calme.
                     </p>
                 </details>
 
@@ -789,13 +743,35 @@
                     </div>
                 </div>
             </section>
+
+            <!-- 6. CONSEQUENCES -->
+            <section id="consequences" class="card">
+                <h2>6. Conséquences et enseignements</h2>
+                <details open>
+                    <summary>6.1 Conséquences humaines et environnementales</summary>
+                    <ul>
+                        <li><strong>Liquidateurs :</strong> centaines de milliers de personnes mobilisées pour éteindre l’incendie,
+                            déblayer, construire le sarcophage.</li>
+                        <li><strong>Évacuation :</strong> la ville de Pripiat est évacuée le lendemain, puis une large zone autour de la centrale.</li>
+                        <li><strong>Contamination :</strong> sols, forêts, cultures, eau… avec des radionucléides comme l’iode‑131 et le césium‑137.</li>
+                    </ul>
+                </details>
+                <details>
+                    <summary>6.2 Impact sur le nucléaire dans le monde</summary>
+                    <ul>
+                        <li><strong>Renforcement de la sûreté :</strong> nouvelles règles, nouvelles organisations internationales (comme l’AIEA renforcée).</li>
+                        <li><strong>Conception des réacteurs :</strong> priorité aux coefficients de vide négatifs, systèmes de sûreté redondants.</li>
+                        <li><strong>Transparence :</strong> Tchernobyl a montré que cacher un accident est impossible à l’échelle planétaire.</li>
+                    </ul>
+                </details>
+            </section>
         </main>
 
         <aside>
             <!-- RBMK diagram -->
             <div class="card">
                 <div class="diagram-title">
-                    Schéma simplifié du cœur RBMK‑1000 (barres de contrôle)
+                    Schéma simplifié du cœur RBMK‑1000 (barres de contrôle, graphite, eau/vapeur)
                 </div>
                 <div class="diagram-core">
                     <div class="core-grid">
@@ -814,10 +790,18 @@
                         <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
                         <div class="rod-slot"><div class="rod"><div class="rod-tip"></div></div></div>
                     </div>
-                    <div class="rod-label">Barres de contrôle (pointe en graphite)</div>
+                    <div class="rod-label">
+                        Barres de contrôle
+                        <span class="info-dot" data-tooltip="barres">?</span>
+                        – pointe en graphite
+                        <span class="info-dot" data-tooltip="barres-graphite">?</span>
+                    </div>
                 </div>
                 <div class="void-panel">
-                    <div class="diagram-title">Coefficient de vide positif – eau → vapeur → réactivité</div>
+                    <div class="diagram-title">
+                        Coefficient de vide positif
+                        <span class="info-dot" data-tooltip="vide">?</span> – eau → vapeur → réactivité
+                    </div>
                     <div class="void-bar">
                         <div class="void-fill" id="void-fill"></div>
                     </div>
@@ -839,7 +823,8 @@
             <div id="pwr" class="card" style="margin-top:14px;">
                 <div class="pwr-card-title">
                     <h3 style="margin:0;">4. Réacteur à eau pressurisée (PWR)</h3>
-                    <span class="status-pill ok">Schéma animé</span>
+                    <span style="font-size:11px;color:var(--muted);">Réacteur moderne avec coefficient de vide négatif
+                        <span class="info-dot" data-tooltip="vide-negatif">?</span></span>
                 </div>
                 <p class="note">
                     Exemple de réacteur nucléaire moderne : cœur dans une cuve sous pression, circuit primaire fermé,
@@ -903,12 +888,22 @@
 
             <!-- Nuage Europe -->
             <div id="nuage" class="card map-card">
-                <h3>5. Nuage radioactif au‑dessus de l’Europe</h3>
-                <p class="note">
-                    Le panache radioactif est transporté par les vents au‑dessus de l’Ukraine, de la Biélorussie, de la Russie,
-                    puis d’une grande partie de l’Europe. La contamination dépend des vents et des pluies.
+                <div class="map-header">
+                    <h3 style="margin:0;">5. Nuage radioactif au‑dessus de l’Europe</h3>
+                    <div class="controls">
+                        <button class="btn" data-day="0">26 avril</button>
+                        <button class="btn" data-day="1">27 avril</button>
+                        <button class="btn" data-day="2">28 avril</button>
+                        <button class="btn" data-day="3">29 avril</button>
+                        <button class="btn" data-day="4">30 avril</button>
+                        <button class="btn" data-day="5">1er mai</button>
+                    </div>
+                </div>
+                <p class="note" id="day-text">
+                    26 avril : le panache commence à s’élever au‑dessus de la centrale et des régions proches (Ukraine, Biélorussie).
                 </p>
                 <div class="map-wrapper">
+                    <div class="day-label" id="day-label">Jour 1 – 26 avril 1986</div>
                     <svg viewBox="0 0 600 260">
                         <rect x="0" y="0" width="600" height="260" fill="#020617" rx="16"/>
                         <!-- Europe simplifiée -->
@@ -919,85 +914,24 @@
                         <text x="260" y="145" text-anchor="middle" class="pwr-label">Zone la plus touchée</text>
                         <text x="260" y="230" text-anchor="middle" class="pwr-label">Nuage radioactif se déplaçant vers l’Europe</text>
                     </svg>
-                    <div class="cloud"></div>
+                    <div class="cloud-layer" id="cloud-layer">
+                        <!-- Jour 1 : autour de Tchernobyl -->
+                        <div class="cloud-shape" data-cloud="0" style="width:120px;height:70px;left:220px;top:110px;"></div>
+                        <!-- Jour 2 : vers nord-ouest -->
+                        <div class="cloud-shape" data-cloud="1" style="width:160px;height:80px;left:260px;top:90px;"></div>
+                        <!-- Jour 3 : Pologne / pays nordiques -->
+                        <div class="cloud-shape" data-cloud="2" style="width:200px;height:90px;left:310px;top:70px;"></div>
+                        <!-- Jour 4 : Europe centrale -->
+                        <div class="cloud-shape" data-cloud="3" style="width:220px;height:100px;left:320px;top:110px;"></div>
+                        <!-- Jour 5 : Europe de l’Ouest -->
+                        <div class="cloud-shape" data-cloud="4" style="width:240px;height:110px;left:260px;top:120px;"></div>
+                        <!-- Jour 6 : dispersion plus large -->
+                        <div class="cloud-shape" data-cloud="5" style="width:280px;height:130px;left:260px;top:90px;"></div>
+                    </div>
                 </div>
             </div>
         </aside>
     </div>
-
-    <!-- Film stickmen -->
-    <section id="film" class="card">
-        <h2>6. Film récapitulatif – Tchernobyl raconté par des stickmen</h2>
-        <p>
-            Clique sur “▶ Lancer la cinématique” pour revoir toute l’histoire comme un petit film : opérateurs, ingénieur,
-            pompiers, enfant, nuage radioactif… avec émotions.
-        </p>
-        <div class="film-btn-row">
-            <button class="btn btn-primary" id="film-play">▶ Lancer la cinématique</button>
-            <button class="btn" id="film-reset">⏹ Réinitialiser</button>
-        </div>
-        <div class="film-stage">
-            <div class="film-track" id="film-track">
-                <!-- Opérateur -->
-                <div class="stick" id="stick-operator" style="left:40px; bottom:10px;">
-                    <div class="stick-head face-worried">
-                        <div class="mouth mouth-worried"></div>
-                    </div>
-                    <div class="stick-body"></div>
-                    <div class="stick-arm" id="op-arm"></div>
-                    <div class="stick-leg left"></div>
-                    <div class="stick-leg right"></div>
-                </div>
-                <!-- Ingénieur -->
-                <div class="stick" id="stick-engineer" style="left:160px; bottom:10px;">
-                    <div class="stick-head face-determined">
-                        <div class="mouth mouth-determined"></div>
-                    </div>
-                    <div class="stick-body"></div>
-                    <div class="stick-arm"></div>
-                    <div class="stick-leg left"></div>
-                    <div class="stick-leg right"></div>
-                </div>
-                <!-- Pompier -->
-                <div class="stick" id="stick-firefighter" style="left:280px; bottom:10px;">
-                    <div class="stick-head face-neutral">
-                        <div class="mouth"></div>
-                    </div>
-                    <div class="stick-body"></div>
-                    <div class="stick-arm"></div>
-                    <div class="stick-leg left"></div>
-                    <div class="stick-leg right"></div>
-                </div>
-                <!-- Enfant -->
-                <div class="stick" id="stick-child" style="left:420px; bottom:10px;">
-                    <div class="stick-head face-sad">
-                        <div class="mouth mouth-sad"></div>
-                    </div>
-                    <div class="stick-body" style="height:32px;"></div>
-                    <div class="stick-arm" style="width:22px;"></div>
-                    <div class="stick-leg left" style="height:22px;"></div>
-                    <div class="stick-leg right" style="height:22px;"></div>
-                </div>
-
-                <!-- Bulles -->
-                <div class="bubble bubble-top" id="bubble-operator" style="left:20px; top:10px; display:none;">
-                    On doit faire le test… même si le réacteur est instable ?
-                </div>
-                <div class="bubble bubble-top" id="bubble-engineer" style="left:140px; top:10px; display:none;">
-                    Les procédures sont dépassées… mais on nous demande de continuer.
-                </div>
-                <div class="bubble bubble-top" id="bubble-firefighter" style="left:260px; top:10px; display:none;">
-                    On voit juste un incendie. On ne nous parle pas de radiation.
-                </div>
-                <div class="bubble bubble-bottom" id="bubble-child" style="left:400px; bottom:10px; display:none;">
-                    Pourquoi on doit quitter la maison ? On nous dit que c’est temporaire…
-                </div>
-            </div>
-        </div>
-        <div class="film-caption" id="film-caption">
-            Prêt ? Lance la cinématique pour revoir toute l’histoire.
-        </div>
-    </section>
 
     <footer>
         Pour GitHub Pages : crée un dépôt, ajoute ce fichier comme <code>index.html</code>, active GitHub Pages, et ouvre l’URL.
@@ -1086,96 +1020,135 @@
     resetBtn.addEventListener("click", resetSequence);
     setState(0);
 
-    /* Film stickmen */
-    const filmPlay = document.getElementById("film-play");
-    const filmReset = document.getElementById("film-reset");
-    const caption = document.getElementById("film-caption");
+    /* Tooltips “?” */
+    const tooltipDefinitions = {
+        rbmk: {
+            title: "RBMK‑1000",
+            text: "Type de réacteur soviétique : modéré au graphite, refroidi à l’eau, avec des canaux de pression. Puissant, mais avec un coefficient de vide positif et des défauts de sûreté."
+        },
+        graphite: {
+            title: "Graphite (modérateur)",
+            text: "Matériau qui ralentit les neutrons sans trop les absorber. Dans le RBMK, le graphite permet aux neutrons de rester efficaces pour provoquer des fissions."
+        },
+        eau: {
+            title: "Eau légère (refroidissement)",
+            text: "L’eau circule dans les canaux pour évacuer la chaleur du combustible. Elle absorbe aussi une partie des neutrons, ce qui influence la réactivité."
+        },
+        canaux: {
+            title: "Canaux de pression",
+            text: "Tubes individuels contenant le combustible et l’eau sous pression. Contrairement à une cuve unique (PWR), chaque canal est séparé, ce qui complique la sûreté."
+        },
+        vide: {
+            title: "Coefficient de vide positif",
+            text: "Quand l’eau bout, elle se transforme en vapeur qui absorbe moins les neutrons que l’eau liquide. Dans le RBMK, cela augmente la réactivité au lieu de la diminuer."
+        },
+        "vide-negatif": {
+            title: "Coefficient de vide négatif",
+            text: "Dans un PWR, si l’eau bout, la réactivité diminue. C’est une sécurité naturelle : plus de vapeur → moins de puissance."
+        },
+        "barres": {
+            title: "Barres de contrôle",
+            text: "Éléments mobiles qui absorbent les neutrons. En les insérant dans le cœur, on réduit la réactivité et la puissance du réacteur."
+        },
+        "barres-graphite": {
+            title: "Pointe en graphite des barres",
+            text: "Dans le RBMK, la partie basse des barres est en graphite. Au début de l’insertion, elle remplace l’eau et augmente localement la réactivité, ce qui est dangereux."
+        },
+        fission: {
+            title: "Fission nucléaire",
+            text: "Un noyau lourd (comme l’uranium‑235) se casse en deux noyaux plus légers, libérant de l’énergie et des neutrons qui peuvent provoquer d’autres fissions."
+        }
+    };
 
-    const bubbleOp = document.getElementById("bubble-operator");
-    const bubbleEng = document.getElementById("bubble-engineer");
-    const bubbleFire = document.getElementById("bubble-firefighter");
-    const bubbleChild = document.getElementById("bubble-child");
+    let currentTooltip = null;
 
-    const opArm = document.getElementById("op-arm");
-    const stickFire = document.getElementById("stick-firefighter");
-    const stickChild = document.getElementById("stick-child");
-
-    let filmTimeouts = [];
-    let filmPlaying = false;
-
-    function clearFilm() {
-        filmTimeouts.forEach(t => clearTimeout(t));
-        filmTimeouts = [];
-        filmPlaying = false;
-        bubbleOp.style.display = "none";
-        bubbleEng.style.display = "none";
-        bubbleFire.style.display = "none";
-        bubbleChild.style.display = "none";
-        caption.textContent = "Prêt ? Lance la cinématique pour revoir toute l’histoire.";
-        opArm.style.transform = "rotate(0deg)";
-        stickFire.style.transform = "translateX(0)";
-        stickChild.style.transform = "translateX(0)";
+    function closeTooltip() {
+        if (currentTooltip && currentTooltip.parentNode) {
+            currentTooltip.parentNode.removeChild(currentTooltip);
+        }
+        currentTooltip = null;
     }
 
-    function playFilm() {
-        if (filmPlaying) return;
-        clearFilm();
-        filmPlaying = true;
+    document.addEventListener("click", (e) => {
+        const dot = e.target.closest(".info-dot");
+        if (!dot) {
+            closeTooltip();
+            return;
+        }
+        const key = dot.getAttribute("data-tooltip");
+        const def = tooltipDefinitions[key];
+        if (!def) return;
 
-        // Scène 1 : salle de contrôle
-        filmTimeouts.push(setTimeout(() => {
-            caption.textContent = "Scène 1 – Salle de contrôle : le test commence, le réacteur est déjà dans une zone instable.";
-            bubbleOp.style.display = "block";
-        }, 200));
+        if (currentTooltip && currentTooltip.dataset.key === key) {
+            closeTooltip();
+            return;
+        }
 
-        // Scène 2 : ingénieur inquiet
-        filmTimeouts.push(setTimeout(() => {
-            bubbleEng.style.display = "block";
-            caption.textContent = "Scène 2 – Ingénieur : il sait que les procédures sont violées, mais la hiérarchie pousse à continuer.";
-        }, 3500));
+        closeTooltip();
 
-        // Scène 3 : AZ-5
-        filmTimeouts.push(setTimeout(() => {
-            caption.textContent = "Scène 3 – Appui sur AZ‑5 : les barres descendent, mais la pointe en graphite augmente la réactivité.";
-            opArm.style.transform = "rotate(-35deg)";
-        }, 6500));
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip";
+        tooltip.dataset.key = key;
+        tooltip.innerHTML = `
+            <div class="tooltip-title">${def.title}</div>
+            <div>${def.text}</div>
+            <div class="tooltip-arrow"></div>
+        `;
 
-        // Scène 4 : déformation, blocage
-        filmTimeouts.push(setTimeout(() => {
-            caption.textContent = "Scène 4 – Déformation : les canaux se tordent, certaines barres se coincent, l’arrêt complet échoue.";
-        }, 9500));
+        dot.appendChild(tooltip);
+        currentTooltip = tooltip;
+    });
 
-        // Scène 5 : explosion, pompiers
-        filmTimeouts.push(setTimeout(() => {
-            bubbleOp.style.display = "none";
-            bubbleEng.style.display = "none";
-            caption.textContent = "Scène 5 – Explosion : les pompiers arrivent, sans savoir qu’ils affrontent un cœur ouvert.";
-            bubbleFire.style.display = "block";
-            stickFire.style.transform = "translateX(-10px)";
-        }, 12500));
+    /* Nuage Europe jour par jour */
+    const dayButtons = Array.from(document.querySelectorAll("#nuage .btn"));
+    const clouds = Array.from(document.querySelectorAll(".cloud-shape"));
+    const dayLabel = document.getElementById("day-label");
+    const dayText = document.getElementById("day-text");
 
-        // Scène 6 : évacuation, enfant
-        filmTimeouts.push(setTimeout(() => {
-            bubbleFire.style.display = "none";
-            caption.textContent = "Scène 6 – Évacuation : les habitants sont évacués, souvent sans explication claire.";
-            bubbleChild.style.display = "block";
-            stickChild.style.transform = "translateX(10px)";
-        }, 16000));
+    const dayInfos = [
+        {
+            label: "Jour 1 – 26 avril 1986",
+            text: "26 avril : le panache commence à s’élever au‑dessus de la centrale et des régions proches (Ukraine, Biélorussie)."
+        },
+        {
+            label: "Jour 2 – 27 avril 1986",
+            text: "27 avril : le nuage se déplace vers le nord et le nord‑ouest, touchant davantage la Biélorussie et l’ouest de la Russie."
+        },
+        {
+            label: "Jour 3 – 28 avril 1986",
+            text: "28 avril : des niveaux anormaux de radioactivité sont détectés en Suède et en Finlande, révélant l’accident au reste du monde."
+        },
+        {
+            label: "Jour 4 – 29 avril 1986",
+            text: "29 avril : le panache se déplace vers l’Europe centrale (Pologne, Allemagne, Tchécoslovaquie, etc.)."
+        },
+        {
+            label: "Jour 5 – 30 avril 1986",
+            text: "30 avril : le nuage atteint une partie de l’Europe de l’Ouest, selon les vents et les conditions météo."
+        },
+        {
+            label: "Jour 6 – 1er mai 1986",
+            text: "1er mai : le panache est largement dispersé au‑dessus de l’Europe, avec des dépôts variables selon les pluies."
+        }
+    ];
 
-        // Scène 7 : nuage sur l’Europe
-        filmTimeouts.push(setTimeout(() => {
-            caption.textContent = "Scène 7 – Nuage radioactif : le panache traverse l’Europe, rappelant que le nucléaire ne connaît pas les frontières.";
-        }, 19500));
-
-        // Fin
-        filmTimeouts.push(setTimeout(() => {
-            caption.textContent = "Fin – Tchernobyl a changé la sûreté nucléaire, la transparence et la façon de concevoir les réacteurs.";
-            filmPlaying = false;
-        }, 23000));
+    function setDay(dayIndex) {
+        clouds.forEach(c => {
+            const idx = parseInt(c.getAttribute("data-cloud"), 10);
+            c.classList.toggle("cloud-visible", idx === dayIndex);
+        });
+        dayLabel.textContent = dayInfos[dayIndex].label;
+        dayText.textContent = dayInfos[dayIndex].text;
+        dayButtons.forEach((btn, i) => {
+            btn.classList.toggle("btn-primary", i === dayIndex);
+        });
     }
 
-    filmPlay.addEventListener("click", playFilm);
-    filmReset.addEventListener("click", clearFilm);
+    dayButtons.forEach((btn, index) => {
+        btn.addEventListener("click", () => setDay(index));
+    });
+
+    setDay(0);
 })();
 </script>
 </body>
